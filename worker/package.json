@@ -1,0 +1,15 @@
+{
+  "name": "gym-whatsapp-worker",
+  "version": "1.0.0",
+  "description": "Headless WhatsApp Bot Worker for Lifetime Free Gym Management",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@whiskeysockets/baileys": "^6.7.19",
+    "express": "^4.21.2",
+    "qrcode": "^1.5.4",
+    "pino": "^9.6.0"
+  }
+}

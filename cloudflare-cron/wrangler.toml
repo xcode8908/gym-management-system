@@ -1,0 +1,12 @@
+name = "gym-reminders-cron"
+main = "index.js"
+compatibility_date = "2024-01-01"
+
+[triggers]
+# 08:00 AM Indian Standard Time (IST) = 02:30 AM UTC
+crons = ["30 2 * * *"]
+
+[vars]
+# Replace with your live Vercel app URL after deployment
+GYM_APP_URL = "https://your-gym-app.vercel.app"
+CRON_SECRET = "dev_cron_secret"

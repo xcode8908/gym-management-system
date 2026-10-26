@@ -204,16 +204,55 @@ function formatDisplayDate(dateString) {
 // ==========================================
 // 4. Persistence & Sync
 // ==========================================
+// Client-side image compression for ultra-fast mobile upload & low storage
+function compressImageFile(file, maxWidth = 1000, quality = 0.75) {
+    return new Promise((resolve) => {
+        if (!file || !file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = (e) => resolve(e.target.result);
+            reader.readAsDataURL(file);
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+
+                if (width > maxWidth) {
+                    height = Math.round((height * maxWidth) / width);
+                    width = maxWidth;
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                resolve(canvas.toDataURL('image/jpeg', quality));
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
 function saveLocalData() {
-    localStorage.setItem(MEMBERS_KEY, JSON.stringify(members));
-    localStorage.setItem(PAYMENTS_KEY, JSON.stringify(payments));
-    localStorage.setItem(CONFIG_KEY, JSON.stringify(appConfig));
+    try {
+        localStorage.setItem(MEMBERS_KEY, JSON.stringify(members));
+        localStorage.setItem(PAYMENTS_KEY, JSON.stringify(payments));
+        localStorage.setItem(CONFIG_KEY, JSON.stringify(appConfig));
+    } catch (e) {
+        console.warn('LocalStorage quota limit reached, relying on Supabase Cloud:', e);
+    }
     updateStatsAndCounters();
 }
 
 async function syncMemberToSupabase(member) {
     try {
-        await fetch(`${SUPABASE_CONFIG.url}/rest/v1/members`, {
+        await fetch(`${SUPABASE_CONFIG.url}/rest/v1/members?on_conflict=member_id`, {
             method: 'POST',
             headers: {
                 'apikey': SUPABASE_CONFIG.key,
@@ -259,7 +298,8 @@ async function syncPaymentToSupabase(payment) {
                 payment_mode: payment.payment_mode,
                 transaction_id: payment.transaction_id || null,
                 period_start: payment.period_start || null,
-                period_end: payment.period_end || null
+                period_end: payment.period_end || null,
+                date: payment.date || getTodayString()
             })
         });
     } catch (e) {
@@ -269,6 +309,7 @@ async function syncPaymentToSupabase(payment) {
 
 async function loadFromSupabase() {
     try {
+        // 1. Load Members
         const res = await fetch(`${SUPABASE_CONFIG.url}/rest/v1/members?select=*&order=created_at.desc`, {
             headers: { 'apikey': SUPABASE_CONFIG.key }
         });
@@ -297,9 +338,64 @@ async function loadFromSupabase() {
                 renderMembers();
             }
         }
+
+        // 2. Load Payments
+        const payRes = await fetch(`${SUPABASE_CONFIG.url}/rest/v1/payments?select=*&order=created_at.desc`, {
+            headers: { 'apikey': SUPABASE_CONFIG.key }
+        });
+        if (payRes.ok) {
+            const payData = await payRes.json();
+            if (payData && payData.length > 0) {
+                payments = payData.map(p => ({
+                    id: p.id,
+                    receipt_no: p.receipt_no,
+                    member_id: p.member_id,
+                    member_name: p.member_name,
+                    amount: Number(p.amount),
+                    payment_type: p.payment_type,
+                    payment_mode: p.payment_mode,
+                    transaction_id: p.transaction_id || '',
+                    date: p.date || (p.created_at ? p.created_at.split('T')[0] : getTodayString())
+                }));
+                saveLocalData();
+                renderMembers();
+            }
+        }
     } catch (e) {
         console.warn('Could not load from Supabase:', e);
     }
+}
+
+// Export all members to CSV / Excel Backup
+function exportMembersToCSV() {
+    if (!members || members.length === 0) {
+        showToast('No member data available to export', 'error');
+        return;
+    }
+
+    const headers = ['Member ID', 'Full Name', 'Phone', 'Blood Group', 'Admission Date', 'Monthly Fee', 'Due Date', 'Status', 'Emergency Contact', 'Notes'];
+    const rows = members.map(m => [
+        `"${m.member_id}"`,
+        `"${m.name}"`,
+        `"${m.phone}"`,
+        `"${m.blood_group || ''}"`,
+        `"${m.admission_date}"`,
+        `"${m.monthly_fee}"`,
+        `"${m.due_date}"`,
+        `"${m.status}"`,
+        `"${m.emergency_contact || ''}"`,
+        `"${(m.notes || '').replace(/"/g, '""')}"`
+    ]);
+
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `KJP_Fitness_Club_Members_${getTodayString()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToast('Exported members backup to Excel/CSV!');
 }
 
 // ==========================================
@@ -377,41 +473,35 @@ function initEventListeners() {
 
     const photoInput = document.getElementById('memberPhotoInput');
     if (photoInput) {
-        photoInput.addEventListener('change', function(e) {
+        photoInput.addEventListener('change', async function(e) {
             const file = e.target.files[0];
             if (file) {
-                const reader = new FileReader();
-                reader.onload = function(evt) {
-                    admissionPhotoBase64 = evt.target.result;
-                    const preview = document.getElementById('photoPreview');
-                    preview.src = evt.target.result;
-                    preview.style.display = 'block';
-                    document.querySelector('#photoUploadBox span').style.display = 'none';
-                    document.querySelector('#photoUploadBox i').style.display = 'none';
-                };
-                reader.readAsDataURL(file);
+                const dataUrl = await compressImageFile(file, 800, 0.75);
+                admissionPhotoBase64 = dataUrl;
+                const preview = document.getElementById('photoPreview');
+                preview.src = dataUrl;
+                preview.style.display = 'block';
+                document.querySelector('#photoUploadBox span').style.display = 'none';
+                document.querySelector('#photoUploadBox i').style.display = 'none';
             }
         });
     }
 
     const idProofInput = document.getElementById('memberIdProofInput');
     if (idProofInput) {
-        idProofInput.addEventListener('change', function(e) {
+        idProofInput.addEventListener('change', async function(e) {
             const file = e.target.files[0];
             if (file) {
                 admissionIdProofName = file.name;
-                const reader = new FileReader();
-                reader.onload = function(evt) {
-                    admissionIdProofBase64 = evt.target.result;
-                    const fileNameEl = document.getElementById('idProofFileName');
-                    if (fileNameEl) {
-                        fileNameEl.textContent = `✓ ${file.name}`;
-                        fileNameEl.style.display = 'block';
-                    }
-                    const span = document.querySelector('#idProofUploadBox span');
-                    if (span) span.textContent = file.name;
-                };
-                reader.readAsDataURL(file);
+                const dataUrl = await compressImageFile(file, 1200, 0.8);
+                admissionIdProofBase64 = dataUrl;
+                const fileNameEl = document.getElementById('idProofFileName');
+                if (fileNameEl) {
+                    fileNameEl.textContent = `✓ ${file.name}`;
+                    fileNameEl.style.display = 'block';
+                }
+                const span = document.querySelector('#idProofUploadBox span');
+                if (span) span.textContent = file.name;
             }
         });
     }
@@ -1329,24 +1419,20 @@ function renderAadharTab(member) {
     }
 }
 
-function handleReplaceIdProof(e, memberId) {
+async function handleReplaceIdProof(e, memberId) {
     const file = e.target.files[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = function(evt) {
-        const dataUrl = evt.target.result;
-        const member = members.find(m => m.id === memberId);
-        if (member) {
-            member.id_proof_url = dataUrl;
-            member.id_proof_name = file.name;
-            saveLocalData();
-            syncMemberToSupabase(member);
-            renderAadharTab(member);
-            showToast(`Document uploaded successfully for ${member.name}!`);
-        }
-    };
-    reader.readAsDataURL(file);
+    const dataUrl = await compressImageFile(file, 1200, 0.8);
+    const member = members.find(m => m.id === memberId);
+    if (member) {
+        member.id_proof_url = dataUrl;
+        member.id_proof_name = file.name;
+        saveLocalData();
+        syncMemberToSupabase(member);
+        renderAadharTab(member);
+        showToast(`Document uploaded successfully for ${member.name}!`);
+    }
 }
 
 function downloadMemberDocument(memberId, type = 'AADHAR') {

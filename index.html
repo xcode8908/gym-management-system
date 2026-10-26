@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KJP Fitness Club | Gym Management System</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Bebas+Neue&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Top Header / Navigation -->
+    <header class="app-header">
+        <div class="header-container">
+            <div class="brand">
+                <div class="brand-logo">
+                    <i class="fa-solid fa-dumbbell"></i>
+                </div>
+                <div class="brand-info">
+                    <h1>KJP <span class="gold-gradient-text">FITNESS</span> CLUB</h1>
+                    <div class="brand-sub">
+                        <span class="brand-location"><i class="fa-solid fa-location-dot"></i> Kusupur, Odisha</span>
+                        <span class="badge-pro"><i class="fa-solid fa-crown"></i> PRO</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Header Quick Stats -->
+            <div class="header-stats">
+                <div class="stat-pill cash">
+                    <i class="fa-solid fa-money-bill-wave"></i>
+                    <div>
+                        <span class="label">Today Cash</span>
+                        <span class="value" id="headerTodayCash">₹0</span>
+                    </div>
+                </div>
+                <div class="stat-pill upi">
+                    <i class="fa-solid fa-mobile-screen-button"></i>
+                    <div>
+                        <span class="label">Today UPI</span>
+                        <span class="value" id="headerTodayUpi">₹0</span>
+                    </div>
+                </div>
+                <button class="btn btn-primary" id="btnOpenNewAdmission">
+                    <i class="fa-solid fa-user-plus"></i> New Admission
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Automation Engine Status Strip -->
+    <div class="engine-status-strip">
+        <div class="status-strip-container">
+            <div class="status-item">
+                <span class="pulse-dot green"></span>
+                <span class="status-label">Green-API WhatsApp:</span>
+                <span class="status-val">Online (919348837931)</span>
+            </div>
+            <div class="status-separator"></div>
+            <div class="status-item">
+                <span class="pulse-dot blue"></span>
+                <span class="status-label">Telegram Bot:</span>
+                <span class="status-val">Connected (@kjpclub_bot)</span>
+            </div>
+            <div class="status-separator"></div>
+            <div class="status-item">
+                <span class="pulse-dot gold"></span>
+                <span class="status-label">Supabase Cloud DB:</span>
+                <span class="status-val">Synced (Lifetime Free)</span>
+            </div>
+            <div class="status-separator"></div>
+            <div class="status-item">
+                <span class="pulse-dot purple"></span>
+                <span class="status-label">Daily Auto Schedule:</span>
+                <span class="status-val">9:30 AM Reminders | 10:00 PM Closing</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App Container -->
+    <main class="main-container">
+        
+        <!-- Summary Cards Grid -->
+        <section class="summary-grid">
+            <div class="stat-card">
+                <div class="card-icon gold">
+                    <i class="fa-solid fa-users"></i>
+                </div>
+                <div class="card-details">
+                    <span class="card-label">Total Members</span>
+                    <h3 class="card-value" id="statTotalMembers">0</h3>
+                    <span class="card-subtext">Lifetime Registered</span>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="card-icon green">
+                    <i class="fa-solid fa-circle-check"></i>
+                </div>
+                <div class="card-details">
+                    <span class="card-label">Active Members</span>
+                    <h3 class="card-value" id="statActiveMembers">0</h3>
+                    <span class="card-subtext">Fee Cleared</span>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="card-icon orange">
+                    <i class="fa-solid fa-clock"></i>
+                </div>
+                <div class="card-details">
+                    <span class="card-label">Due Soon / Overdue</span>
+                    <h3 class="card-value" id="statDueMembers">0</h3>
+                    <span class="card-subtext">7, 3, 1-Day Reminders Active</span>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="card-icon blue">
+                    <i class="fa-solid fa-circle-pause"></i>
+                </div>
+                <div class="card-details">
+                    <span class="card-label">Paused / Frozen</span>
+                    <h3 class="card-value" id="statPausedMembers">0</h3>
+                    <span class="card-subtext">Days Preserved</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Actions & Filter Bar -->
+        <section class="control-bar">
+            <div class="search-box">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="searchInput" placeholder="Search by Name, Phone Number, or Member ID...">
+                <button class="clear-search" id="clearSearchBtn"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <div class="filter-tabs">
+                <button class="tab-btn active" data-filter="ALL">All (<span id="countAll">0</span>)</button>
+                <button class="tab-btn" data-filter="ACTIVE">Active (<span id="countActive">0</span>)</button>
+                <button class="tab-btn" data-filter="DUE">Due / Overdue (<span id="countDue">0</span>)</button>
+                <button class="tab-btn" data-filter="PAUSED">Paused (<span id="countPaused">0</span>)</button>
+                <button class="tab-btn" data-filter="INACTIVE">Inactive (<span id="countInactive">0</span>)</button>
+            </div>
+
+            <div class="utility-actions">
+                <button class="btn btn-outline" id="btnDailyTelegram">
+                    <i class="fa-brands fa-telegram"></i> Send Telegram Report
+                </button>
+                <button class="btn btn-outline" id="btnDueRemindersModal" onclick="openDueRemindersModal()" style="border-color: #25D366; color: #25D366;">
+                    <i class="fa-brands fa-whatsapp"></i> WhatsApp Reminders (<span id="dueBadgeCount">0</span>)
+                </button>
+                <button class="btn btn-outline" id="btnOpenSettings">
+                    <i class="fa-solid fa-gear"></i> Settings
+                </button>
+            </div>
+        </section>
+
+        <!-- Members Grid / List -->
+        <section class="members-section">
+            <div class="section-header">
+                <h2>Members Directory</h2>
+                <span class="status-indicator"><i class="fa-solid fa-cloud"></i> Lifetime Free Cloud Synced</span>
+            </div>
+
+            <div class="members-grid" id="membersGrid">
+                <!-- Dynamically Populated by app.js -->
+            </div>
+
+            <div class="empty-state" id="emptyState" style="display: none;">
+                <i class="fa-solid fa-user-slash"></i>
+                <h3>No members found</h3>
+                <p>Try searching with another name or add a new admission.</p>
+            </div>
+        </section>
+    </main>
+
+    <!-- ==================== MODALS ==================== -->
+
+    <!-- 1. New Admission Modal -->
+    <div class="modal-overlay" id="admissionModal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <i class="fa-solid fa-user-plus text-gold"></i>
+                    <div>
+                        <h3>New Member Admission</h3>
+                        <p>KJP Fitness Club, Kusupur</p>
+                    </div>
+                </div>
+                <button class="modal-close" data-close="admissionModal"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <form id="admissionForm">
+                <div class="modal-body">
+                    <!-- Photo & Doc Upload -->
+                    <div class="upload-row">
+                        <div class="upload-box" id="photoUploadBox">
+                            <i class="fa-solid fa-camera"></i>
+                            <span>Member Photo</span>
+                            <input type="file" id="memberPhotoInput" accept="image/*">
+                            <img id="photoPreview" class="preview-img" style="display:none;">
+                        </div>
+                        <div class="upload-box" id="idProofUploadBox">
+                            <i class="fa-solid fa-id-card"></i>
+                            <span>Aadhar / ID Proof</span>
+                            <input type="file" id="memberIdProofInput" accept="image/*,application/pdf">
+                            <span id="idProofFileName" class="file-name" style="display:none;"></span>
+                        </div>
+                    </div>
+
+                    <!-- Personal Details -->
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Full Name <span class="required">*</span></label>
+                            <input type="text" id="newMemberName" required placeholder="e.g. Rahul Sharma">
+                        </div>
+                        <div class="form-group">
+                            <label>WhatsApp Number <span class="required">*</span></label>
+                            <input type="tel" id="newMemberPhone" required placeholder="e.g. 9876543210" maxlength="10">
+                        </div>
+                        <div class="form-group">
+                            <label>Emergency Contact</label>
+                            <input type="tel" id="newMemberEmergency" placeholder="Family / Friend phone">
+                        </div>
+                        <div class="form-group">
+                            <label>Blood Group</label>
+                            <select id="newMemberBloodGroup">
+                                <option value="">Select (Optional)</option>
+                                <option value="A+">A+</option>
+                                <option value="B+">B+</option>
+                                <option value="O+">O+</option>
+                                <option value="AB+">AB+</option>
+                                <option value="A-">A-</option>
+                                <option value="B-">B-</option>
+                                <option value="O-">O-</option>
+                                <option value="AB-">AB-</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Fee Structure Box (Automatic Breakdown) -->
+                    <div class="fee-breakdown-box">
+                        <div class="breakdown-title">
+                            <i class="fa-solid fa-receipt"></i> Admission Billing Summary
+                        </div>
+                        <div class="breakdown-row">
+                            <span>One-Time Admission Fee (Payable Today):</span>
+                            <span class="amount">₹<span id="displayAdmissionFee">1000</span></span>
+                        </div>
+                        <div class="breakdown-row">
+                            <span>1st Monthly Fee (Due at Month End):</span>
+                            <span class="amount text-muted">₹<span id="displayMonthlyFee">400</span> (Pay later)</span>
+                        </div>
+                        <div class="breakdown-divider"></div>
+                        <div class="breakdown-row total">
+                            <span>Total Payable Today:</span>
+                            <span class="total-amount">₹<span id="displayTotalFee">1000</span></span>
+                        </div>
+                    </div>
+
+                    <!-- Payment Mode -->
+                    <div class="payment-mode-section">
+                        <label>Payment Mode Received <span class="required">*</span></label>
+                        <div class="radio-group">
+                            <label class="radio-card selected">
+                                <input type="radio" name="admissionPaymentMode" value="CASH" checked>
+                                <i class="fa-solid fa-money-bill-wave"></i>
+                                <span>Cash Counter</span>
+                            </label>
+                            <label class="radio-card">
+                                <input type="radio" name="admissionPaymentMode" value="UPI">
+                                <i class="fa-solid fa-qrcode"></i>
+                                <span>UPI / PhonePe / GPay</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label>Notes / Health Info (Optional)</label>
+                        <textarea id="newMemberNotes" rows="2" placeholder="Any injury, goal, or special note..."></textarea>
+                    </div>
+
+                    <div class="whatsapp-alert-notice">
+                        <i class="fa-brands fa-whatsapp text-green"></i>
+                        <span>An automated Welcome Card & Fee Receipt will be delivered immediately to this WhatsApp number!</span>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" data-close="admissionModal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="btnSubmitAdmission">
+                        <i class="fa-solid fa-check"></i> Complete Admission & Send Receipt
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 2. Collect Fee (Billing) Modal -->
+    <div class="modal-overlay" id="collectFeeModal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <i class="fa-solid fa-cash-register text-gold"></i>
+                    <div>
+                        <h3>Collect Monthly Fee</h3>
+                        <p id="billMemberSubtitle">Member: Rahul Sharma (KJP-101)</p>
+                    </div>
+                </div>
+                <button class="modal-close" data-close="collectFeeModal"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <form id="collectFeeForm">
+                <input type="hidden" id="billMemberId">
+                <div class="modal-body">
+                    <!-- Current Status Info Box -->
+                    <div class="info-banner" id="billStatusBanner">
+                        <div class="banner-row">
+                            <span>Current Expiry Date:</span>
+                            <strong id="billCurrentExpiry">30 Nov 2026</strong>
+                        </div>
+                        <div class="banner-row">
+                            <span>New Extended Expiry Date:</span>
+                            <strong class="text-green" id="billNewCalculatedExpiry">30 Dec 2026</strong>
+                        </div>
+                        <p class="banner-hint" id="billCalculationHint">
+                            <i class="fa-solid fa-shield-halved"></i> Early payment rollover active: Remaining days are safely preserved!
+                        </p>
+                    </div>
+
+                    <div class="form-grid" style="margin-top: 15px;">
+                        <div class="form-group">
+                            <label>Amount to Collect (₹)</label>
+                            <input type="number" id="billAmountInput" value="400" required min="100">
+                        </div>
+                        <div class="form-group">
+                            <label>Months Renewing</label>
+                            <select id="billMonthsSelect">
+                                <option value="1" selected>1 Month (30 Days)</option>
+                                <option value="2">2 Months (60 Days)</option>
+                                <option value="3">3 Months (90 Days)</option>
+                                <option value="6">6 Months (180 Days)</option>
+                                <option value="12">1 Year (365 Days)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Payment Mode -->
+                    <div class="payment-mode-section" style="margin-top: 15px;">
+                        <label>Received Via <span class="required">*</span></label>
+                        <div class="radio-group">
+                            <label class="radio-card selected">
+                                <input type="radio" name="billPaymentMode" value="CASH" checked>
+                                <i class="fa-solid fa-money-bill-wave"></i>
+                                <span>CASH</span>
+                            </label>
+                            <label class="radio-card">
+                                <input type="radio" name="billPaymentMode" value="UPI">
+                                <i class="fa-solid fa-qrcode"></i>
+                                <span>UPI / QR</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-group" id="upiTxnGroup" style="display: none; margin-top: 12px;">
+                        <label>UPI Transaction ID / UTR (Optional)</label>
+                        <input type="text" id="billUpiTxnId" placeholder="e.g. 429182910291">
+                    </div>
+
+                    <div class="whatsapp-alert-notice" style="margin-top: 15px;">
+                        <i class="fa-brands fa-whatsapp text-green"></i>
+                        <span>Instant digital cash/UPI receipt will be sent to the member's WhatsApp.</span>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" data-close="collectFeeModal">Cancel</button>
+                    <button type="submit" class="btn btn-success" id="btnConfirmFeeCollection">
+                        <i class="fa-solid fa-circle-check"></i> Confirm Payment & Send Receipt
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 3. Pause / Resume Membership Modal -->
+    <div class="modal-overlay" id="pauseModal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <i class="fa-solid fa-circle-pause text-blue"></i>
+                    <div>
+                        <h3 id="pauseModalTitle">Pause Membership</h3>
+                        <p id="pauseMemberSubtitle">Freeze days during breaks</p>
+                    </div>
+                </div>
+                <button class="modal-close" data-close="pauseModal"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <form id="pauseForm">
+                <input type="hidden" id="pauseMemberId">
+                <input type="hidden" id="pauseActionType" value="PAUSE">
+
+                <div class="modal-body">
+                    <div class="pause-summary-box" id="pauseExplanationBox">
+                        <!-- Populated dynamically based on Pause or Resume -->
+                    </div>
+
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label>Reason for Pause / Notes</label>
+                        <input type="text" id="pauseReasonInput" placeholder="e.g., Going home for exams, sickness, travel">
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" data-close="pauseModal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="btnConfirmPauseResume">Confirm</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 4. Member Edit Modal -->
+    <div class="modal-overlay" id="editMemberModal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <i class="fa-solid fa-user-pen text-gold"></i>
+                    <div>
+                        <h3>Edit Member Details</h3>
+                        <p id="editMemberSubtitle">Update info & customized monthly fee</p>
+                    </div>
+                </div>
+                <button class="modal-close" data-close="editMemberModal"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <form id="editMemberForm">
+                <input type="hidden" id="editMemberId">
+                <div class="modal-body">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Full Name</label>
+                            <input type="text" id="editMemberName" required>
+                        </div>
+                        <div class="form-group">
+                            <label>WhatsApp Number</label>
+                            <input type="tel" id="editMemberPhone" required maxlength="10">
+                        </div>
+                        <div class="form-group">
+                            <label>Monthly Fee for this Member (₹)</label>
+                            <input type="number" id="editMemberMonthlyFee" required min="0">
+                            <small class="field-hint">You can change fee for this member anytime (e.g. ₹400 to ₹500)</small>
+                        </div>
+                        <div class="form-group">
+                            <label>Current Status</label>
+                            <select id="editMemberStatus">
+                                <option value="ACTIVE">ACTIVE</option>
+                                <option value="DUE">DUE</option>
+                                <option value="PAUSED">PAUSED</option>
+                                <option value="INACTIVE">INACTIVE</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Due Date</label>
+                            <input type="date" id="editMemberDueDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Emergency Contact</label>
+                            <input type="tel" id="editMemberEmergency">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" data-close="editMemberModal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 5. Settings / Integration Modal -->
+    <div class="modal-overlay" id="settingsModal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <i class="fa-solid fa-sliders text-gold"></i>
+                    <div>
+                        <h3>Gym Settings & Integrations</h3>
+                        <p>KJP Fitness Club, Kusupur</p>
+                    </div>
+                </div>
+                <button class="modal-close" data-close="settingsModal"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="settings-section">
+                    <h4><i class="fa-solid fa-building"></i> Gym Details</h4>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Default Admission Fee (₹)</label>
+                            <input type="number" id="cfgDefaultAdmission" value="1000">
+                        </div>
+                        <div class="form-group">
+                            <label>Default Monthly Fee (₹)</label>
+                            <input type="number" id="cfgDefaultMonthly" value="400">
+                        </div>
+                        <div class="form-group">
+                            <label>Gym UPI ID (For Reminders)</label>
+                            <input type="text" id="cfgUpiId" value="kjpfitness@upi">
+                        </div>
+                        <div class="form-group">
+                            <label>Gym Timings Notice</label>
+                            <input type="text" id="cfgTimings" value="Morning: 5:30 AM - 10:00 AM | Evening: 4:30 PM - 9:30 PM">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-section" style="margin-top: 20px;">
+                    <h4><i class="fa-solid fa-wand-magic-sparkles text-gold"></i> Google Gemini AI (Smart Reminders & OCR)</h4>
+                    <p class="field-hint">Free API key from <a href="https://aistudio.google.com" target="_blank" style="color: var(--primary-gold);">Google AI Studio</a> for personalized motivational messages:</p>
+                    <div class="form-group">
+                        <label>Gemini API Key</label>
+                        <input type="password" id="cfgGeminiApiKey" placeholder="AIzaSy...">
+                    </div>
+                </div>
+
+                <div class="settings-section" style="margin-top: 20px;">
+                    <h4><i class="fa-solid fa-bolt"></i> n8n Webhook Connection</h4>
+                    <p class="field-hint">Your Render n8n Webhook URL to trigger WhatsApp & Telegram automations:</p>
+                    <div class="form-group">
+                        <label>n8n Base Webhook URL</label>
+                        <input type="url" id="cfgN8nWebhookUrl" placeholder="https://kjp-fitness-n8n.onrender.com/webhook/kjp-events">
+                    </div>
+                    <div class="form-group">
+                        <label>Telegram Owner Chat ID</label>
+                        <input type="text" id="cfgTelegramChatId" placeholder="e.g. 129381920">
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" data-close="settingsModal">Close</button>
+                <button type="button" class="btn btn-primary" id="btnSaveSettings">Save Settings</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Due Reminders Modal -->
+    <div class="modal-overlay" id="dueRemindersModal">
+        <div class="modal-card modal-lg">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <i class="fa-brands fa-whatsapp text-green"></i>
+                    <div>
+                        <h3>Pending WhatsApp Reminders</h3>
+                        <p>Members due in 7, 3, 1 days or overdue — Send with 1 click!</p>
+                    </div>
+                </div>
+                <button class="modal-close" data-close="dueRemindersModal"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <div id="dueRemindersList" class="due-reminders-list">
+                    <!-- Injected by JavaScript -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" data-close="dueRemindersModal">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 6. Member Documents, Aadhar & ID Card Modal -->
+    <div class="modal-overlay" id="memberDocsModal">
+        <div class="modal-card modal-lg">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <i class="fa-solid fa-folder-open text-gold"></i>
+                    <div>
+                        <h3 id="docModalMemberName">Member Documents & ID Card</h3>
+                        <p id="docModalMemberSub">View, Upload & Download Aadhar Proof, Photo & Membership Pass</p>
+                    </div>
+                </div>
+                <button class="modal-close" data-close="memberDocsModal"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <div class="modal-body">
+                <!-- Navigation Tabs inside Document Modal -->
+                <div class="doc-tabs">
+                    <button class="doc-tab-btn active" data-doctab="tabAadhar">
+                        <i class="fa-solid fa-id-card"></i> Aadhar / ID Proof
+                    </button>
+                    <button class="doc-tab-btn" data-doctab="tabIdPass">
+                        <i class="fa-solid fa-address-card"></i> Gym Membership Card
+                    </button>
+                    <button class="doc-tab-btn" data-doctab="tabReceipts">
+                        <i class="fa-solid fa-receipt"></i> Payment Receipts
+                    </button>
+                </div>
+
+                <!-- Tab 1: Aadhar / ID Proof Document -->
+                <div class="doc-tab-content active" id="tabAadhar">
+                    <div id="aadharDocContainer">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Tab 2: Official Digital Gym Membership Pass -->
+                <div class="doc-tab-content" id="tabIdPass" style="display: none;">
+                    <div class="id-pass-wrapper" id="idPassWrapper">
+                        <!-- Populated by JS: High-res Gym ID pass -->
+                    </div>
+                    <div style="display: flex; justify-content: center; margin-top: 16px; gap: 12px;">
+                        <button class="btn btn-primary" onclick="printMembershipCard()">
+                            <i class="fa-solid fa-print"></i> Print / Download Gym Card
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tab 3: Receipts History -->
+                <div class="doc-tab-content" id="tabReceipts" style="display: none;">
+                    <div id="memberReceiptsList" class="receipts-list">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" data-close="memberDocsModal">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div class="toast" id="appToast">
+        <i class="toast-icon fa-solid fa-circle-check"></i>
+        <span class="toast-message" id="toastMessage">Success</span>
+    </div>
+
+    <!-- Scripts -->
+    <script src="app.js"></script>
+</body>
+</html>

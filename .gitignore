@@ -1,36 +1,5 @@
-# Dependencies
-/node_modules
-/.pnp
-.pnp.js
-.yarn/install-state.gz
-
-# Next.js build
-/.next/
-/out/
-
-# Environment variables
-.env*.local
+.playwright-mcp/
+node_modules/
 .env
-
-# WhatsApp Baileys credentials & session (MUST NEVER BE COMMITTED)
-auth_info_baileys/
-worker/auth_info_baileys/
-worker/node_modules/
-
-# TypeScript
-*.tsbuildinfo
-next-env.d.ts
-
-# Operating System files
-.DS_Store
-Thumbs.db
+.env.local
 *.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# IDE & Editor files
-.idea/
-.vscode/
-*.swp
-*.swo

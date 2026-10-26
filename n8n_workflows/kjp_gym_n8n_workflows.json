@@ -1,0 +1,357 @@
+{
+  "name": "KJP Fitness Club - Complete Automation System",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "kjp-events",
+        "options": {}
+      },
+      "id": "acc5a1f2-dcff-42dd-9f80-8f67e85b680f",
+      "name": "Incoming Dashboard Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [
+        176,
+        0
+      ],
+      "webhookId": "kjp-events"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.body.event }}",
+              "value2": "NEW_ADMISSION"
+            }
+          ]
+        }
+      },
+      "id": "d5aa3090-fff9-4772-a0bb-4694f29dcab0",
+      "name": "Is New Admission?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        416,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.telegram.org/bot8835065906:AAGY7OKj2wvnnBDTLKZi6pHuNTHkl4uazO8/sendMessage",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"chat_id\": \"1945876839\",\n  \"text\": \"🔔 *NEW ADMISSION AT KJP FITNESS CLUB* 🔔\\n━━━━━━━━━━━━━━━━━━━━━━\\n• *Member:* {{ $json.body.data.member.name }} ({{ $json.body.data.member.member_id }})\\n• *Phone:* {{ $json.body.data.member.phone }}\\n• *Amount Paid:* ₹{{ $json.body.data.payment.amount }} ({{ $json.body.data.payment.payment_mode }})\\n• *Valid Upto:* {{ $json.body.data.member.due_date }}\\n━━━━━━━━━━━━━━━━━━━━━━\\n_1st Month Valid. Lifetime Profile Created._\",\n  \"parse_mode\": \"Markdown\"\n}",
+        "options": {}
+      },
+      "id": "ddc08aee-cfaf-42a8-a6c5-5d253e7693cf",
+      "name": "Telegram: Alert Gym Owner",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        656,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "30 9 * * *"
+            }
+          ]
+        }
+      },
+      "id": "b962eca5-0e21-4b41-9c83-786d44188ea3",
+      "name": "Cron: 9:30 AM Daily Reminders",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        176,
+        272
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://kgbglbdrvadpitrvvgpc.supabase.co/rest/v1/rpc/get_due_reminders",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtnYmdsYmRydmFkcGl0cnZ2Z3BjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI5OTU4ODAsImV4cCI6MjEwODU3MTg4MH0.BIGYowYYujxSKj-Wx08irBWCya14Q1Z9skwcZyzyweo"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "2b88f066-fdec-4715-9ffa-ff608bc876d1",
+      "name": "Supabase: Fetch 7, 3, 1 Day Expiries",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        416,
+        272
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key={{ $env.GEMINI_API_KEY }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"contents\": [{\n    \"parts\": [{\n      \"text\": \"You are manager of KJP Fitness Club, Kusupur. Write a polite, motivational 35-word WhatsApp message in Hinglish for member {{ $json.name }} whose monthly fee of ₹{{ $json.monthly_fee }} is due in {{ $json.days_left }} days. Include gym emojis.\"\n    }]\n  }]\n}",
+        "options": {}
+      },
+      "id": "ddb6561b-7f35-4209-912b-46ad8da2d41d",
+      "name": "Gemini AI: Personalize Reminder",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "continueOnFail": true,
+      "position": [
+        640,
+        272
+      ]
+    },
+    {
+      "parameters": {
+        "amount": 6,
+        "unit": "seconds"
+      },
+      "id": "170fea59-ca9e-44da-9913-13ddc9169687",
+      "name": "Anti-Ban Wait (6s Delay)",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        864,
+        272
+      ],
+      "webhookId": "ea97a3bc-3b8e-4596-a00a-4014118d4646"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://7107.api.greenapi.com/waInstance710722780886/sendMessage/2dcb9267493c4cefb83b351568ee4964fe36a23b59414e21af",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"chatId\": \"{{ $('Supabase: Fetch 7, 3, 1 Day Expiries').item.json.phone.replace(/[^0-9]/g, '').startsWith('91') ? $('Supabase: Fetch 7, 3, 1 Day Expiries').item.json.phone.replace(/[^0-9]/g, '') : '91' + $('Supabase: Fetch 7, 3, 1 Day Expiries').item.json.phone.replace(/[^0-9]/g, '') }}@c.us\",\n  \"message\": \"{{ $('Gemini AI: Personalize Reminder').item?.json?.candidates?.[0]?.content?.parts?.[0]?.text || ('Namaste ' + $('Supabase: Fetch 7, 3, 1 Day Expiries').item.json.name + ' ji! 💪 KJP Fitness Club me aapki monthly gym fee (₹' + $('Supabase: Fetch 7, 3, 1 Day Expiries').item.json.monthly_fee + ') ' + $('Supabase: Fetch 7, 3, 1 Day Expiries').item.json.days_left + ' din me due hone wali hai. Consistency is key! Milte hain workout floor par! 🔥') }}\"\n}",
+        "options": {}
+      },
+      "id": "green-api-send-reminder",
+      "name": "WhatsApp: Send Auto Message (Green-API)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1080,
+        272
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://kgbglbdrvadpitrvvgpc.supabase.co/rest/v1/rpc/mark_reminder_sent",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtnYmdsYmRydmFkcGl0cnZ2Z3BjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI5OTU4ODAsImV4cCI6MjEwODU3MTg4MH0.BIGYowYYujxSKj-Wx08irBWCya14Q1Z9skwcZyzyweo"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"member_uuid\": \"{{ $('Supabase: Fetch 7, 3, 1 Day Expiries').item.json.id }}\"\n}",
+        "options": {}
+      },
+      "id": "supabase-mark-sent",
+      "name": "Supabase: Mark Reminder Sent",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1300,
+        272
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 22 * * *"
+            }
+          ]
+        }
+      },
+      "id": "8fb28ff8-cab8-4654-a6dd-af536b9bfcff",
+      "name": "Cron: 10:00 PM Daily Closing",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        176,
+        512
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://kgbglbdrvadpitrvvgpc.supabase.co/rest/v1/rpc/get_daily_closing",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtnYmdsYmRydmFkcGl0cnZ2Z3BjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI5OTU4ODAsImV4cCI6MjEwODU3MTg4MH0.BIGYowYYujxSKj-Wx08irBWCya14Q1Z9skwcZyzyweo"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c470f312-1400-434d-904c-2b9a2111c070",
+      "name": "Supabase: Calculate Today Closing",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        416,
+        512
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.telegram.org/bot8835065906:AAGY7OKj2wvnnBDTLKZi6pHuNTHkl4uazO8/sendMessage",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"chat_id\": \"1945876839\",\n  \"text\": \"📊 *KJP FITNESS CLUB — DAILY CLOSING REPORT* 📊\\n📍 Kusupur\\n━━━━━━━━━━━━━━━━━━━━━━\\n💰 *TODAY'S REVENUE:*\\n• 💵 Cash Collection: ₹{{ $json.total_cash }}\\n• 📲 UPI Collection: ₹{{ $json.total_upi }}\\n• 🏆 *Total Collection: ₹{{ $json.total_revenue }}*\\n• 🧾 Transactions: {{ $json.count_payments }}\\n━━━━━━━━━━━━━━━━━━━━━━\\n_Sent automatically by KJP Automation Engine at 10:00 PM._\",\n  \"parse_mode\": \"Markdown\"\n}",
+        "options": {}
+      },
+      "id": "44dd2770-23cd-4b60-8806-6ebbfa2fe31f",
+      "name": "Telegram: Send 10 PM Closing Report",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        656,
+        512
+      ]
+    }
+  ],
+  "connections": {
+    "Incoming Dashboard Webhook": {
+      "main": [
+        [
+          {
+            "node": "Is New Admission?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is New Admission?": {
+      "main": [
+        [
+          {
+            "node": "Telegram: Alert Gym Owner",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cron: 9:30 AM Daily Reminders": {
+      "main": [
+        [
+          {
+            "node": "Supabase: Fetch 7, 3, 1 Day Expiries",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase: Fetch 7, 3, 1 Day Expiries": {
+      "main": [
+        [
+          {
+            "node": "Gemini AI: Personalize Reminder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini AI: Personalize Reminder": {
+      "main": [
+        [
+          {
+            "node": "Anti-Ban Wait (6s Delay)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anti-Ban Wait (6s Delay)": {
+      "main": [
+        [
+          {
+            "node": "WhatsApp: Send Auto Message (Green-API)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "WhatsApp: Send Auto Message (Green-API)": {
+      "main": [
+        [
+          {
+            "node": "Supabase: Mark Reminder Sent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cron: 10:00 PM Daily Closing": {
+      "main": [
+        [
+          {
+            "node": "Supabase: Calculate Today Closing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase: Calculate Today Closing": {
+      "main": [
+        [
+          {
+            "node": "Telegram: Send 10 PM Closing Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
